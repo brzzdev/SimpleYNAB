@@ -169,9 +169,14 @@ struct PrototypeShell: View {
 
 // MARK: - Shared bits
 
-/// The calculator-style keypad, shared by B and D so the two thumb-first
-/// variants are comparing layout rather than key size. Digits fill from the
-/// right — "1234" is £12.34 and no decimal point is ever typed.
+/// The minor-units amount control, shared by B and D so the two are comparing
+/// layout rather than key size. Digits fill from the right — "1234" is £12.34
+/// and no decimal point is ever typed.
+///
+/// The *model* is the same on both platforms; only the input surface differs. A
+/// 3×4 grid of mouse targets is strictly slower than the number row, and in a
+/// 340×460 popover it is also the only thing that fits — so macOS gets the
+/// keyboard path and a confirm button instead.
 struct Keypad: View {
 	@Bindable var draft: Draft
 	/// Rendered as the bottom-right key. The variants disagree about what
@@ -183,6 +188,29 @@ struct Keypad: View {
 	private let rows = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]
 
 	var body: some View {
+		#if os(macOS)
+		keyboardPath
+		#else
+		grid
+		#endif
+	}
+
+	private var keyboardPath: some View {
+		VStack(spacing: 8) {
+			Text("Type the amount — digits fill from the right, ⌫ deletes")
+				.font(.caption)
+				.foregroundStyle(.tertiary)
+			Button(action: confirm) {
+				Text(confirmLabel)
+					.font(.headline)
+					.frame(maxWidth: .infinity, minHeight: 30)
+			}
+			.buttonStyle(.borderedProminent)
+			.disabled(!isConfirmEnabled)
+		}
+	}
+
+	private var grid: some View {
 		Grid(horizontalSpacing: 8, verticalSpacing: 8) {
 			ForEach(rows, id: \.self) { row in
 				GridRow {

@@ -37,6 +37,24 @@ lint:
 outdated:
 	mint run swift-outdated --ignore-prerelease
 
+# PROTOTYPE ONLY — quick-entry variants on the iOS simulator (issue #4)
+prototype-ios sim="iPhone 17 Pro":
+	cd Prototype/QuickEntry && tuist generate --no-open
+	cd Prototype/QuickEntry && xcodebuild -workspace QuickEntryPrototype.xcworkspace -scheme QuickEntryiOS -destination "platform=iOS Simulator,name={{ sim }}" -derivedDataPath .build -quiet build
+	xcrun simctl boot "{{ sim }}" || true
+	open -a Simulator
+	# Without this, install/launch can race a still-booting device.
+	xcrun simctl bootstatus booted -b
+	xcrun simctl install booted Prototype/QuickEntry/.build/Build/Products/Debug-iphonesimulator/QuickEntryiOS.app
+	xcrun simctl launch booted dev.brzz.SimpleYNAB.QuickEntryPrototype
+
+# PROTOTYPE ONLY — quick-entry variants in the macOS menu bar (issue #4)
+prototype-mac:
+	cd Prototype/QuickEntry && tuist generate --no-open
+	cd Prototype/QuickEntry && xcodebuild -workspace QuickEntryPrototype.xcworkspace -scheme QuickEntryMac -destination 'platform=macOS' -derivedDataPath .build -quiet build
+	killall QuickEntryMac 2>/dev/null || true
+	open Prototype/QuickEntry/.build/Build/Products/Debug/QuickEntryMac.app
+
 # Install developer tools
 tools:
 	which brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

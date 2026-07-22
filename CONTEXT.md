@@ -51,6 +51,31 @@ was revoked. The token stays in the keychain and the app offers to **reconnect**
 it is never deleted automatically, because the item syncs and a false positive
 would sign every device out at once.
 
+**Cache** — the local SQLite projection of one plan's payees, accounts and
+categories, holding only the fields the five steps need. It is device-local,
+never synced between devices, and always disposable — every row is a copy of
+something YNAB owns, so it can be thrown away and refetched. It holds no
+balances and no transactions. Settled by
+[ADR-0004](docs/adr/0004-the-cache-is-a-device-local-sqlite-projection.md).
+
+**Sync** — one pass of the three delta reads that refresh the cache. Fires on
+popover open or foreground, throttled, and never on the critical path: the form
+is drawn from the cache before a sync is even requested. Say "sync", not
+"fetch" or "refresh", for this.
+
+**Cursor** — a stored `server_knowledge` value, one per endpoint, marking how
+much of that endpoint the cache has seen. Cursors are per-device and are never
+crossed between endpoints.
+
+**Rebuild** — dropping the cursors, deleting every row and refetching from
+scratch. The only manual refresh the app offers, and the automatic answer to a
+failed migration, an unreadable store, or a change of plan. A rebuild is always
+total; there is no partial one.
+
+**Populated-cache invariant** — quick entry only ever appears against a
+populated cache. The first sync happens during onboarding, so no step ever needs
+an empty state.
+
 **Sign out** — the deliberate teardown of everything the YNAB account produced:
 the token, the cache, every `server_knowledge` cursor, and account-derived
 preferences. It is always global, because deleting a synchronizable keychain item

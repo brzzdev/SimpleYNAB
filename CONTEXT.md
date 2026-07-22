@@ -40,3 +40,19 @@ confirmation rather than a decision.
 
 **Inflow / outflow** — the direction of a transaction, chosen in step 1. Outflow
 is the default and is sent as a negative milliunit amount.
+
+**Personal access token** — the only credential SimpleYNAB holds. The user
+generates it on YNAB's web app and pastes it in; it never expires and is never
+refreshed. Say "token", not "API key" or "login". Settled by
+[ADR-0003](docs/adr/0003-auth-is-a-pasted-personal-access-token.md).
+
+**Invalid token** — the state a token enters when YNAB answers `401`, meaning it
+was revoked. The token stays in the keychain and the app offers to **reconnect**;
+it is never deleted automatically, because the item syncs and a false positive
+would sign every device out at once.
+
+**Sign out** — the deliberate teardown of everything the YNAB account produced:
+the token, the cache, every `server_knowledge` cursor, and account-derived
+preferences. It is always global, because deleting a synchronizable keychain item
+deletes it on every device. Device state — launch at login, the answered
+first-run prompt — is **not** account data and survives.

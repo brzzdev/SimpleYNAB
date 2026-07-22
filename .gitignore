@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Tuist-generated (regenerate with `tuist generate`)
+*.xcodeproj
+*.xcworkspace
+Derived/
+graph.dot
+
+# Xcode
+DerivedData/
+*.xcscmblueprint
+*.xcuserstate
+xcuserdata/
+
+# Credentials
+.env
+.netrc
+
+# SwiftLint remote config cache
+.swiftlint/RemoteConfigCache

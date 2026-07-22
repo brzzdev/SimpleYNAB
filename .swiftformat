@@ -1,0 +1,8 @@
+# Project-specific overrides only — base ruleset is fetched at format-time from
+# brzzdev/Configs (see the `format` recipe in the justfile).
+
+# The base config sets `--header strip`. This project is AGPL-3.0-or-later, so
+# every source file instead carries an SPDX identifier: GitHub's detector only
+# sees `AGPL-3.0` from the LICENSE file, and "or later" exists only where we
+# assert it. `swiftformat --lint` fails on a missing header, so CI enforces it.
+--header //\n// Copyright © {created.year} brzzdev\n// SPDX-License-Identifier: AGPL-3.0-or-later\n//

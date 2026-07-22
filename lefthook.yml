@@ -1,0 +1,13 @@
+# Install the hooks with `lefthook install` (run for you by `just tools`).
+#
+# Both jobs are gated on staged Swift files: SwiftLint exits non-zero when it
+# finds nothing lintable, which would otherwise block docs-only commits.
+pre-commit:
+  piped: true
+  jobs:
+    - name: format
+      glob: "*.swift"
+      run: just format-staged
+    - name: swiftlint
+      glob: "*.swift"
+      run: just lint

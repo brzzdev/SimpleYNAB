@@ -1,0 +1,9 @@
+deployment_target:
+  iOS_deployment_target: 26.0
+  macOS_deployment_target: 26.0
+  tvOS_deployment_target: 26.0
+  watchOS_deployment_target: 26.0
+
+excluded:
+  - .build
+  - "**/.build"

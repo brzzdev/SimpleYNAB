@@ -7,6 +7,10 @@ Date: 2026-07-22
 Accepted. Settles [#6](https://github.com/brzzdev/SimpleYNAB/issues/6). Informed
 by the API survey in [#2](https://github.com/brzzdev/SimpleYNAB/issues/2).
 
+Amended 2026-07-22, same day. The decision is unchanged; the Context originally
+asserted that no backend could hold a client secret, which was an assumption
+presented as a fact. A backend is possible and is now weighed openly below.
+
 ## Context
 
 YNAB offers three ways to authenticate, and the survey in #2 established what
@@ -23,12 +27,29 @@ the one that cannot work here: a 2-hour token with no refresh means a
 re-authorization web sheet several times a day, in an app whose entire pitch is
 that it is instant on launch.
 
-The authorization code grant needs a client secret. SimpleYNAB is AGPL, so the
-source publishes anything embedded in it, and there is no backend to hold one.
-PKCE would normally rescue a public client, but YNAB documents PKCE as an
-*addition* to `client_secret`, not a replacement — its own worked token-request
-example sends both. Whether the token endpoint accepts a PKCE exchange with the
-secret omitted is unconfirmed and untestable without a registered client.
+The authorization code grant needs a client secret — on the initial exchange
+*and* on every refresh. SimpleYNAB is AGPL, so the source publishes anything
+embedded in it. PKCE would normally rescue a public client, but YNAB documents
+PKCE as an *addition* to `client_secret`, not a replacement — its own worked
+token-request example sends both. Whether the token endpoint accepts a PKCE
+exchange with the secret omitted is unconfirmed and untestable without a
+registered client, and a public client would need *both* the exchange and the
+refresh to tolerate its absence.
+
+A backend can hold the secret instead, and this deserves stating plainly because
+it is a live option rather than an impossibility. A stateless Cloudflare Worker
+would take the `redirect_uri`, exchange the code with the secret from an env var,
+hand the tokens back to the app over a custom scheme, and do the same on refresh —
+storing nothing. It also dissolves two unknowns: YNAB would only ever see an
+`https://` redirect URI, the one shape its docs demonstrate, and secret-less PKCE
+would stop mattering. Cost is not the obstacle — Workers' free plan allows
+100,000 requests/day and answers overage with Error 1027 rather than an invoice,
+where a user refreshing every two hours costs roughly 12 requests/day.
+
+The obstacle is what it makes SimpleYNAB: an app with a service behind it. Every
+user's tokens transit infrastructure someone has to keep up, sign-in and refresh
+both fail when it is down, and the privacy policy acquires substantive claims. The
+decision below is therefore scoped to v1, whose audience is the author.
 
 Registering an OAuth application also carries Restricted Mode (25 non-owner
 tokens) until a review that "takes 2-4 weeks", a published privacy policy, and a
@@ -113,3 +134,18 @@ stays answered.
 - **Rejected: the implicit grant, despite being the sanctioned mobile flow.** It
   is the only option with no Terms ambiguity at all, and it is unusable — a
   2-hour token with no refresh contradicts ADR-0001 directly.
+- **Deferred, not rejected: the authorization code grant behind a stateless
+  Worker.** It is the better answer for an audience of strangers, because
+  "Sign in with YNAB" beats "visit Developer Settings, generate a token, paste
+  it" — which this ADR concedes is the worst moment in the app. It is the wrong
+  answer for an audience of one: a personal access token never expires, so there
+  is no refresh to fail and no service to be down. Revisit when the App Store
+  becomes the target, at which point Restricted Mode, the review, the privacy
+  policy and the rename all arrive together and are best decided as one.
+- **The auth mechanism must therefore be a seam, not a constant.** Because that
+  revisit is expected rather than hypothetical, nothing outside the credential
+  layer may assume the token was pasted, never expires, or came from the
+  keychain. The API client takes a dependency that yields a bearer token and can
+  report it invalid; whether that value came from a paste or a refresh is not its
+  business. This is the one place where a deferred decision imposes a design
+  constraint on v1, and the module-layout ticket inherits it.

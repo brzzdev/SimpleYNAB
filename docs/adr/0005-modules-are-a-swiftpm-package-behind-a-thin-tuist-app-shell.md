@@ -117,7 +117,7 @@ pasted, never expires, or came from the keychain, because the App Store release
 is expected to switch to OAuth-with-refresh. The seam that satisfies it:
 
 - **Persisted and synced:** `@Shared(.keychain("token", accessGroup: …,
-  accessibility: .whenUnlocked, synchronizable: true)) var token: String?` via
+  accessibility: .whenUnlocked(synchronizable: true))) var token: String?` via
   `SharingKeychain`. `nil` means absent/signed-out. This is the storage-and-UI
   surface — onboarding, Settings and the reconnect affordance all bind to it.
 - **Invalidity is in-memory**, per ADR-0003 ("marks the credential invalid *in
@@ -154,8 +154,12 @@ is expected to switch to OAuth-with-refresh. The seam that satisfies it:
   ```
 
 `SharingKeychain` (`brzzdev`, MIT) supplies exactly ADR-0003's storage trio —
-`accessGroup`, `accessibility: .whenUnlocked` (= `kSecAttrAccessibleWhenUnlocked`),
-`synchronizable: true` — plus an in-memory `KeychainClient` test value. It must
+`accessGroup` and `accessibility: .whenUnlocked(synchronizable: true)`, which
+carries both `kSecAttrAccessibleWhenUnlocked` and the sync flag in one value —
+plus an in-memory `KeychainClient` test value. Synchronisation is expressible
+only on the two accessibility levels Apple permits it on, so ADR-0003's
+combination type-checks and the `*ThisDeviceOnly` levels cannot be paired with
+it at all. It must
 be made public (or vendored) to ship as a dependency of an open-source app; that
 is [#18](https://github.com/brzzdev/SimpleYNAB/issues/18).
 
